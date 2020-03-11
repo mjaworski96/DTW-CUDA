@@ -53,7 +53,7 @@ int _mitbi(int mi, int start_index)
 	return mi - start_index;
 }
 __device__
-SIGNAL _save_get_value(SIGNAL* buffer, int buffer_size, int index) {
+SIGNAL _safe_get_value(SIGNAL* buffer, int buffer_size, int index) {
 	if (index < 0 || index >= buffer_size)
 		return huge;
 	else
@@ -65,13 +65,16 @@ SIGNAL dtw_distance(SIGNAL* a, int a_i,
 	SIGNAL* b, int b_i,
 	int ts_size, int window)
 {
+	if (window > ts_size)
+		window = ts_size;
+
 	int buffers_size = 2 * window;
 	SIGNAL* first = (SIGNAL*)malloc(buffers_size * sizeof(SIGNAL));
 	SIGNAL* second = (SIGNAL*)malloc(buffers_size * sizeof(SIGNAL));
 	memset(first, huge, buffers_size * sizeof(SIGNAL));
 	memset(second, huge, buffers_size * sizeof(SIGNAL));
 	int first_start_index = -window - 1;
-	int second_start_index = -window;;
+	int second_start_index = -window;
 	for (int i = 0; i < ts_size; i++)
 	{
 		SIGNAL a_value = a[_mitai(a_i, i, ts_size)];
@@ -95,9 +98,9 @@ SIGNAL dtw_distance(SIGNAL* a, int a_i,
 				int first_index = _mitbi(j, first_start_index);
 				int second_index = _mitbi(j, second_start_index);
 				second[second_index] = _min(
-					_save_get_value(first, buffers_size, first_index - 1),
-					_save_get_value(second, buffers_size, second_index - 1),
-					_save_get_value(first, buffers_size, first_index))
+					_safe_get_value(first, buffers_size, first_index - 1),
+					_safe_get_value(second, buffers_size, second_index - 1),
+					_safe_get_value(first, buffers_size, first_index))
 					+ dist;
 			}
 		}
